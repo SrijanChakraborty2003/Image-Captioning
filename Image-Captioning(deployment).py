@@ -1,0 +1,35 @@
+import streamlit as st
+from PIL import Image
+from transformers import BlipProcessor, BlipForConditionalGeneration
+import torch
+
+@st.cache_resource()
+def load_model():
+    processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+    model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+    model.eval()
+    return processor, model
+
+processor, model = load_model()
+
+def generate_caption(image):
+    text_prompt = "a photography of"
+    inputs = processor(image, text_prompt, return_tensors="pt")
+    with torch.no_grad():
+        output = model.generate(**inputs)
+    caption = processor.decode(output[0], skip_special_tokens=True)
+    return caption
+
+st.title("🖼️ Image Captioning App")
+st.write("Upload an image, and the AI will generate a caption for it!")
+
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png", "webp"])
+
+if uploaded_file is not None:
+    image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="Uploaded Image", use_column_width=True)
+    
+    if st.button("Generate Caption"):
+        caption = generate_caption(image)
+        st.write("### Generated Caption:")
+        st.success(caption)
