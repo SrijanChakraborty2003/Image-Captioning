@@ -1,11 +1,19 @@
 import streamlit as st
 from PIL import Image
-from transformers import BlipProcessor, BlipForConditionalGeneration
+from transformers import AutoProcessor, BlipForConditionalGeneration
 import torch
+import asyncio
 
+# Fix event loop issue
+try:
+    asyncio.get_running_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
+# Load BLIP model and processor
 @st.cache_resource()
 def load_model():
-    processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+    processor = AutoProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
     model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
     model.eval()
     return processor, model
@@ -20,6 +28,7 @@ def generate_caption(image):
     caption = processor.decode(output[0], skip_special_tokens=True)
     return caption
 
+# Streamlit UI
 st.title("🖼️ Image Captioning App")
 st.write("Upload an image, and the AI will generate a caption for it!")
 
